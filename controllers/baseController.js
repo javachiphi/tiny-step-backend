@@ -7,7 +7,7 @@ class BaseController {
     }
 
     getAll(req, res){
-        res.send('get all entries')
+        res.send('get all')
     }
 }
 
