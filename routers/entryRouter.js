@@ -15,7 +15,9 @@ class EntryRouter {
     }
 
     routes(){
-          router.get(`/`, this.controller.getAll.bind(this.controller));
+          router.get('/', this.controller.getAll.bind(this.controller));
+          router.post('/', this.controller.createOne.bind(this.controller));
+          
           router.get('/:entryId',this.controller.getOne.bind(this.controller));
           router.put('/:entryId',this.controller.updateOne.bind(this.controller));
           router.delete('/:entryId',this.controller.deleteOne.bind(this.controller));

@@ -2,12 +2,18 @@ const express =require("express");
 
 
 class BaseController {
-    constructor(){
-        
+    constructor(model){
+        this.model = model;
     }
 
-    getAll(req, res){
-        res.send('get all')
+   async getAll(req, res){
+     try {
+        const all = await this.model.findAll();
+        console.log('getting all')
+        res.send(all)
+     } catch(error) {
+        console.error('error', error)
+     }
     }
 }
 
