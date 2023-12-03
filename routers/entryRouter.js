@@ -1,5 +1,5 @@
 const express = require('express')
-const router = express.Router()
+const router = express.Router({ mergeParams: true }); 
 
 // router for CRUD /entries 
 // create post /entries  then action (controller )
@@ -15,7 +15,7 @@ class EntryRouter {
     }
 
     routes(){
-          router.get('/', this.controller.getAll.bind(this.controller));
+          router.get('/', this.controller.getAllbyOneUser.bind(this.controller));
           router.post('/', this.controller.createOne.bind(this.controller));
           
           router.get('/:entryId',this.controller.getOne.bind(this.controller));
