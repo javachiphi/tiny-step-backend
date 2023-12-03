@@ -11,19 +11,28 @@ const { entry, tag, user } = db;
 
 const EntryRouter = require('./routers/entryRouter.js')
 const TagRouter = require('./routers/tagRouter.js')
+const UserRouter = require('./routers/userRouter.js')
 const EntryController = require('./controllers/entryController.js')
 const TagController = require('./controllers/tagController.js')
+const UserController = require('./controllers/userController.js')
 
 
-
+//entry 
 const entryController = new EntryController(entry, user)
 const entryRouter = new EntryRouter(entryController).routes()
 app.use('/users/:userId/entries', entryRouter);
 
+
+//tag
 const tagController = new TagController(tag, user, entry)
 const tagRouter = new TagRouter(tagController).routes()
 app.use('/tags', tagRouter);
 
+
+//user 
+const userController = new UserController(user);
+const userRouter = new UserRouter(userController).routes();
+app.use('/users', userRouter);
 
 
 app.get('/', (req, res) => {

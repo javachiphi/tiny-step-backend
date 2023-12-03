@@ -2,25 +2,70 @@ const BaseController = require("./baseController");
 
 
 class userController extends BaseController {
-    constructor(){
-        super(); 
+    constructor(model){
+        super(model); 
     }
 
-    getOne(req, res){
-        res.send('get single user');
+     //figure out how to better handle password 
+    async createOne(req, res){
+        try {
+            console.log('req.body', req.body)
+            const { email, password, personality } = req.body;
+            const newUser = await this.model.create({
+                email: email, 
+                password: password, 
+                personality: personality || null,
+            })
+            res.send(newUser);
+        } catch(error) {
+            console.log('error', error);
+            res.status(500).send('Error creating')
+        }
     }
 
-    createOne(req, res){
-        res.send('create single user');
+    async getOne(req, res){
+        try {
+            const { userId } = req.params
+            const found = await this.model.findByPk(userId);
+            res.send(found)
+        } catch(error) {
+            console.log('error', error);
+            res.status(500).send('Error getting')
+        }
     }
 
 
-   updateOne(req, res){
-        res.send('update user');
+    //figure out how to better handle password update 
+   async updateOne(req, res){
+        try {
+            const { userId } = req.params;
+            const { personality, email, password } = req.body;
+
+            const found = await this.model.findByPk(userId);
+
+            found.personality = personality;
+            found.email = email;
+            found.password = password; 
+
+            const updated = await found.save(); 
+            res.send(updated);
+        } catch(error) {
+            console.log('error', error);
+            res.status(500).send('Error updating')
+        }
     }
 
-    deleteOne(req, res){
-        res.send('delete user');
+    async deleteOne(req, res){
+        try {
+            const { userId } = req.params; 
+            const found = await this.model.findByPk(userId);
+            console.log('found', found);
+            found.destroy()
+            res.send("deleted");
+        } catch(error) {
+            console.log('error', error);
+            res.status(500).send('Error deleting')
+        }
     }
 }
 
