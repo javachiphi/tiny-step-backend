@@ -2,25 +2,27 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('entries', {
+    await queryInterface.createTable('tags', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      user_id: {
-        type: Sequelize.INTEGER,
-        references: {
-          model: "users",
-          key: "id",
-        },
+      note: {
+        type: Sequelize.STRING
       },
-      observation: {
-        type: Sequelize.TEXT
+      type: {
+        type: Sequelize.STRING, //myers_briggs, CBT, user_generated
+        allowNull: true,
       },
-      solution: {
-        type: Sequelize.TEXT
+      description: {
+        type: Sequelize.STRING, 
+        allowNull: true,
+      },
+      personality: {
+        type: Sequelize.STRING, 
+        allowNull: true,
       },
       created_at: {
         allowNull: false,
@@ -33,6 +35,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('entries');
+    await queryInterface.dropTable('tags');
   }
 };
