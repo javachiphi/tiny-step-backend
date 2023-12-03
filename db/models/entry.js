@@ -6,6 +6,7 @@ module.exports = (sequelize, DataTypes) => {
   class entry extends Model {
     static associate(models) {
       // define association here
+      this.belongsToMany(models.tag, { through: 'entry_tags'})
     }
   }
   entry.init({
