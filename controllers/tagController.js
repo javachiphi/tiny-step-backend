@@ -30,7 +30,7 @@ class tagController extends BaseController {
     // user addede default tags to their profile" - during onboarding 
     async addUserTags(req, res) {
         const { userId } = req.params;
-        const tagsToAdd = req.body.tags; 
+        const tagsToAdd = req.body.idsToAdd
     
         try {
             const user = await this.userModel.findByPk(userId);
@@ -38,8 +38,8 @@ class tagController extends BaseController {
                 return res.status(404).send('User not found');
             }
     
-            const tagIds = tagsToAdd.map(tag => tag.tagId);
-            await user.addTags(tagIds);
+            // const tagIds = tagsToAdd.map(tag => tag.tagId);
+            await user.addTags(tagsToAdd);
     
             res.status(200).json({ message: "Tags added successfully" });
         } catch (error) {
@@ -49,15 +49,17 @@ class tagController extends BaseController {
     }
     
     // user removed default tag 
-    async removeUserTag(req, res) {
+    async removeUserTags(req, res) {
         const { userId, tagId } = req.params;
-        const user = await this.userModel.findByPk(userId);
+        const tagsToDelete = req.body
+       
         try {
-            await user.removeTag(tagId);
-            res.status(200).json({message: "tag removed"})
+            const user = await this.userModel.findByPk(userId);
+            await user.removeTags(tagsToDelete);
+            res.status(200).json({message: `tags removed: ${tagsToDelete}`})
         }catch(error){
             console.error('error', error);
-            res.status(500).send('Error removing tag');
+            res.status(500).send('Error removing tags');
         }
     }
 
