@@ -7,8 +7,8 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       const { user, tag } = models
-      this.belongsTo(user)
-      this.belongsToMany(tag, { through: 'entry_tags'})
+      this.belongsTo(user, { foreignKey: 'user_id' })
+      this.belongsToMany(tag, { through: 'entry_tags', foreignKey: 'entry_id', otherKey: 'tag_id'})
     }
   }
   entry.init({

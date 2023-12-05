@@ -16,6 +16,7 @@ class EntryRouter {
 
     routes(){
           router.get('/', this.controller.getAllbyOneUser.bind(this.controller));
+          router.get('/tagCount', this.controller.getEntryTagAllCounts.bind(this.controller));
           router.post('/', this.controller.createOne.bind(this.controller));
           
           router.get('/:entryId',this.controller.getOne.bind(this.controller));

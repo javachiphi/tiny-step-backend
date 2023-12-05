@@ -1,14 +1,17 @@
 const BaseController = require("./baseController");
+const { sequelize } = require("../db/models/index.js")
 // finish entry controller 
 //finish user-tags/ entry-tags controller 
 
 
 class entryController extends BaseController {
-    constructor(model, userModel){
+    constructor(model, userModel, tagModel){
         super(model); 
-        this.userModel = userModel
+        this.userModel = userModel;
+        this.tagModel = tagModel; 
         
     }
+
 
     async getAllbyOneUser(req, res){
         const { userId } = req.params
@@ -16,7 +19,8 @@ class entryController extends BaseController {
             const all = await this.model.findAll({
                 where: {
                     userId: userId 
-                }
+                },
+                order: [['created_at', 'DESC']], 
             });
             res.send(all);
         } catch(error) {
@@ -83,6 +87,43 @@ class entryController extends BaseController {
             res.status(500).send('Error deleting')
         }
     }
+
+    async getEntryTagAllCounts(req, res) {
+        const { userId } = req.params;
+      
+        try {
+            const tagCounts = await this.tagModel.findAll({
+                attributes: [
+                    "id",
+                    "note"
+                //   [sequelize.fn('COUNT', sequelize.col('tag.id')), 'tagCount'],
+                ],
+                include: [
+                  {
+                    model: this.model,
+                    where: {
+                      userId: userId,
+                    },
+                     through: {
+                      attributes: [],
+                    },
+                  },
+                ],
+                // group: ['tag.id'],
+                raw: true,
+                nest: true,
+              })
+              .then( (result) => {console.log("result", result)})
+              .catch((error) => console.log('error', error))
+          
+         
+          res.json(tagCounts);
+        } catch (error) {
+          console.error('Error', error);
+          res.status(500).json({ error: 'An error occurred while counting tags.' });
+        }
+      }
+      
 }
 
 module.exports = entryController;
