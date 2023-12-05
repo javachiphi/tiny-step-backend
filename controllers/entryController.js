@@ -113,11 +113,11 @@ class entryController extends BaseController {
                 raw: true,
                 nest: true,
               })
-              .then( (result) => {console.log("result", result)})
-              .catch((error) => console.log('error', error))
+            //   .then( (result) => {console.log("result", result)})
+            //   .catch((error) => console.log('error', error))
           
          
-          res.json(tagCounts);
+          res.send(tagCounts);
         } catch (error) {
           console.error('Error', error);
           res.status(500).json({ error: 'An error occurred while counting tags.' });

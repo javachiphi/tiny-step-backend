@@ -15,8 +15,8 @@ class tagRouter {
         router.get('/:tagId',this.controller.getOne.bind(this.controller));
         router.put('/:tagId',this.controller.updateOne.bind(this.controller));
         router.delete('/:tagId',this.controller.deleteOne.bind(this.controller));
-
-
+        
+        
         //User-tags association 
         router.get(`/users/:userId`, this.controller.getUserTags.bind(this.controller));
         router.post(`/users/:userId/`, this.controller.addUserTags.bind(this.controller));
@@ -29,23 +29,10 @@ class tagRouter {
         router.post('/entries/:entryId', this.controller.addEntryTag.bind(this.controller));    
         router.delete('/entries/:entryId/:tagId', this.controller.removeEntryTag.bind(this.controller));
 
-
-
-
-        
-          
         return router;
 
 
     }
-
-    //only create via userId/tags [1]  categoryId/tags
-//entries/:categoryId/tags
-//users/:userId/
-
-    //only user creates tags through api 
-    //a user add to tags (multiple) onboarding 
-    // a user can remove tag from its user-tag junction table 
 
 }
 
