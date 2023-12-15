@@ -22,7 +22,7 @@ const UserController = require('./controllers/userController.js')
 //entry 
 const entryController = new EntryController(entry, user, tag)
 const entryRouter = new EntryRouter(entryController).routes()
-app.use('/users/:userId/entries', entryRouter);
+app.use('/entries', entryRouter);
 
 
 //tag

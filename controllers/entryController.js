@@ -1,9 +1,5 @@
 const BaseController = require("./baseController");
 const { sequelize } = require("../db/models/index.js")
-// finish entry controller 
-//finish user-tags/ entry-tags controller 
-
-
 class entryController extends BaseController {
     constructor(model, userModel, tagModel){
         super(model); 
@@ -14,7 +10,15 @@ class entryController extends BaseController {
 
 
     async getAllbyOneUser(req, res){
-        const { userId } = req.params
+        const jwtSub = req.auth.payload.sub;
+        const foundUser = await this.userModel.findOne({
+            where: {
+                jwtSub: jwtSub
+            }
+        })
+
+        const userId = foundUser.id 
+        
         try {
             const all = await this.model.findAll({
                 where: {
@@ -42,8 +46,16 @@ class entryController extends BaseController {
 
     async createOne(req, res){
         try {
-            console.log('req.body', req.body)
-            const { userId } = req.params;
+            const jwtSub = req.auth.payload.sub;
+            const foundUser = await this.userModel.findOne({
+                where: {
+                    jwtSub: jwtSub
+                }
+            })
+
+            const userId = foundUser.id 
+
+
             const { observation, solution } = req.body;
             const newEntry = await this.model.create({
                 userId: userId, 
@@ -57,10 +69,11 @@ class entryController extends BaseController {
         }
     }
 
+
+    
    async updateOne(req, res){
         try {
-            console.log('req.body', req.body)
-            const { userId, entryId } = req.params;
+            const { entryId } = req.params;
             const { observation, solution } = req.body;
 
             const found = await this.model.findByPk(entryId);
@@ -76,6 +89,7 @@ class entryController extends BaseController {
         }
     }
 
+
     async deleteOne(req, res){
         try {
             const { entryId } = req.params; 
@@ -89,7 +103,14 @@ class entryController extends BaseController {
     }
 
     async getEntryTagAllCounts(req, res) {
-        const { userId } = req.params;
+        const jwtSub = req.auth.payload.sub;
+        const foundUser = await this.userModel.findOne({
+            where: {
+                jwtSub: jwtSub
+            }
+        })
+
+        const userId = foundUser.id 
       
         try {
             const tagCounts = await this.tagModel.findAll({
@@ -112,11 +133,8 @@ class entryController extends BaseController {
                 // group: ['tag.id'],
                 raw: true,
                 nest: true,
-              })
-            //   .then( (result) => {console.log("result", result)})
-            //   .catch((error) => console.log('error', error))
-          
-         
+              }) 
+
           res.send(tagCounts);
         } catch (error) {
           console.error('Error', error);
