@@ -1,5 +1,12 @@
 const express = require('express')
-const router = express.Router()
+const router = express.Router()  
+const { auth } = require('express-oauth2-jwt-bearer');
+
+const jwtCheck = auth({
+    audience: 'https://diary/api',
+    issuerBaseURL: 'https://dev-e417tt8aydm3bghh.us.auth0.com/',
+    tokenSigningAlg: 'RS256'
+  });
 
 class userRouter {
     constructor(controller) {
@@ -7,8 +14,8 @@ class userRouter {
     }
 
     routes(){
-          router.get(`/`, this.controller.getAll.bind(this.controller));
-          router.post(`/`, this.controller.createOne.bind(this.controller));
+          // router.get(`/`, this.controller.getAll.bind(this.controller));
+          router.get(`/`, jwtCheck, this.controller.createOne.bind(this.controller));
           
           router.get('/:userId',this.controller.getOne.bind(this.controller));
           router.put('/:userId',this.controller.updateOne.bind(this.controller));

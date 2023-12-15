@@ -5,18 +5,19 @@ class userController extends BaseController {
     constructor(model){
         super(model); 
     }
-
-     //figure out how to better handle password 
     async createOne(req, res){
         try {
-            console.log('req.body', req.body)
-            const { email, password, personality } = req.body;
-            const newUser = await this.model.create({
-                email: email, 
-                password: password, 
-                personality: personality || null,
-            })
-            res.send(newUser);
+
+            const jwtSub = req.auth.payload.sub;
+
+            const user = await this.model.findOrCreate({
+                where: { jwtSub: jwtSub },
+                defaults: {
+                    jwtSub: jwtSub
+                  }
+              });
+
+            res.status(200).send(user);
         } catch(error) {
             console.log('error', error);
             res.status(500).send('Error creating')
@@ -34,8 +35,6 @@ class userController extends BaseController {
         }
     }
 
-
-    //figure out how to better handle password update 
    async updateOne(req, res){
         try {
             const { userId } = req.params;
