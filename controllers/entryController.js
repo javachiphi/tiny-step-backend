@@ -56,12 +56,16 @@ class entryController extends BaseController {
             const userId = foundUser.id 
 
 
-            const { observation, solution } = req.body;
+            const { observation, solution, tagId } = req.body;
             const newEntry = await this.model.create({
                 userId: userId, 
                 observation: observation || null,
                 solution: solution || null,
             })
+         
+            if(tagId) {
+             newEntry.addTag(tagId);
+            }
             res.send(newEntry);
         } catch(error) {
             console.log('error', error);
@@ -110,6 +114,7 @@ class entryController extends BaseController {
             }
         })
 
+        console.log('foundUser', foundUser)
         const userId = foundUser.id 
       
         try {
