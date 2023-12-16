@@ -14,7 +14,14 @@ class tagController extends BaseController {
     // display default tags that user selected 
     async getUserTags(req,res){
         try{
-            const {userId} = req.params;
+            const jwtSub = req.auth.payload.sub;
+
+            const foundUser = await this.userModel.findOne({
+                where: {
+                    jwtSub: jwtSub
+                }
+            })
+            const userId = foundUser.id 
             const user = await this.userModel.findByPk(userId);
             const tags = await user.getTags({
                 attributes: ["note", "description", "type", "personality"]
@@ -29,8 +36,16 @@ class tagController extends BaseController {
 
     // user addede default tags to their profile" - during onboarding 
     async addUserTags(req, res) {
-        const { userId } = req.params;
         const tagsToAdd = req.body.idsToAdd
+
+        const jwtSub = req.auth.payload.sub;
+
+        const foundUser = await this.userModel.findOne({
+            where: {
+                jwtSub: jwtSub
+            }
+        })
+        const userId = foundUser.id 
     
         try {
             const user = await this.userModel.findByPk(userId);
@@ -50,8 +65,18 @@ class tagController extends BaseController {
     
     // user removed default tag 
     async removeUserTags(req, res) {
-        const { userId, tagId } = req.params;
+        const { tagId } = req.params;
         const tagsToDelete = req.body
+
+
+        const jwtSub = req.auth.payload.sub;
+
+        const foundUser = await this.userModel.findOne({
+            where: {
+                jwtSub: jwtSub
+            }
+        })
+        const userId = foundUser.id 
        
         try {
             const user = await this.userModel.findByPk(userId);
