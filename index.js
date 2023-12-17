@@ -34,7 +34,7 @@ app.use('/tags', tagRouter);
 //user 
 const userController = new UserController(user);
 const userRouter = new UserRouter(userController).routes();
-app.use('/users', userRouter);
+app.use('/user', userRouter);
 
 
 app.get('/', (req, res) => {
