@@ -1,5 +1,7 @@
 const BaseController = require("./baseController");
-const { sequelize } = require("../db/models/index.js")
+const { sequelize } = require("../db/models/index.js");
+
+
 class entryController extends BaseController {
     constructor(model, userModel, tagModel){
         super(model); 
@@ -16,7 +18,6 @@ class entryController extends BaseController {
                 jwtSub: jwtSub
             }
         })
-
         const userId = foundUser.id 
         
         try {
@@ -76,17 +77,34 @@ class entryController extends BaseController {
 
     
    async updateOne(req, res){
+    const jwtSub = req.auth.payload.sub;
+    
         try {
             const { entryId } = req.params;
-            const { observation, solution } = req.body;
+            const { observation, solution, tagId } = req.body;
 
             const found = await this.model.findByPk(entryId);
+            const user = await this.userModel.findOne({ where: { jwtSub } });
 
+            if (found.userId !== user.id) {
+                return res.status(403).send('Not authorized to update this entry');
+            }
+    
+
+        
+            console.log('found?', found)
             found.observation = observation;
             found.solution = solution;
 
-            const updated = await found.save(); 
-            res.send(updated);
+            await found.save(); 
+
+            if (tagId) {
+                // Assuming tagId is an array of tag IDs
+                await found.setTags(tagId);
+            }
+
+            // found.updateTag(tagId)???
+            res.send(found);
         } catch(error) {
             console.log('error', error);
             res.status(500).send('Error updating')
@@ -94,15 +112,29 @@ class entryController extends BaseController {
     }
 
 
-    async deleteOne(req, res){
+ 
+    async deleteOne(req, res) {
+        const jwtSub = req.auth.payload.sub;
+        
         try {
-            const { entryId } = req.params; 
-            const found = await this.model.findByPk(entryId);
-            found.destroy()
-            res.send("deleted");
-        } catch(error) {
+            const { entryId } = req.params;
+            const entry = await this.model.findByPk(entryId);
+    
+            if (!entry) {
+                return res.status(404).send('Entry not found');
+            }
+    
+            const user = await this.userModel.findOne({ where: { jwtSub } });
+            if (entry.userId !== user.id) {
+                return res.status(403).send('Not authorized to delete this entry');
+            }
+            
+    
+            await entry.destroy();
+            res.send("Entry deleted successfully");
+        } catch (error) {
             console.log('error', error);
-            res.status(500).send('Error deleting')
+            res.status(500).send('Error deleting');
         }
     }
 

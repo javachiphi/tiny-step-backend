@@ -8,7 +8,15 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       const { user, tag } = models
       this.belongsTo(user, { foreignKey: 'user_id' })
-      this.belongsToMany(tag, { through: 'entry_tags', foreignKey: 'entry_id', otherKey: 'tag_id'})
+      this.belongsToMany(tag, { 
+        through: 'entry_tags',  
+        onDelete: 'CASCADE', 
+        onUpdate: 'CASCADE', 
+        foreignKey: 'entry_id', 
+        otherKey: 'tag_id'
+      })
+    
+    
     }
   }
   entry.init({
