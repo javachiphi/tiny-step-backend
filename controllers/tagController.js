@@ -203,8 +203,8 @@ class tagController extends BaseController {
         try {
             const { tagId } = req.params; 
             const found = await this.model.findByPk(tagId);
-            found.delete
-            res.send("deleted");
+            const result = await found.destroy();
+            res.status(200).send(result);
         } catch(error) {
             console.log('error', error);
             res.status(500).send('Error deleting')
