@@ -1,5 +1,6 @@
 const BaseController = require("./baseController");
-const { sequelize } = require("../db/models/index.js")
+const { sequelize } = require("../db/models/index.js");
+const { Op } = require('sequelize');
 
 
 class tagController extends BaseController {
@@ -9,7 +10,21 @@ class tagController extends BaseController {
         this.entryModel = entryModel; 
     }
 
+    async getSystemTags(req, res){
+        try{
+            const systemTags = await this.model.findAll({
+                where: {
+                    type: {
+                        [Op.ne]: 'user_generated'
+                    }
+                }
+            });
 
+            res.send(systemTags);
+        } catch(error){
+            cosole.error('error', error)
+        }
+    }
 //USER - TAGS ASSOCIATION ACTIONS //
     // display default tags that user selected 
     async getUserTags(req,res){
