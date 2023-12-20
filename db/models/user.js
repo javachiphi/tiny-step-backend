@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       const { entry, tag } = models
       this.hasMany(entry);
+      
       this.belongsToMany(tag, { 
         through: 'user_tags',
         onDelete: 'CASCADE', 

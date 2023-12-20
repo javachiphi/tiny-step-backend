@@ -17,7 +17,7 @@ class EntryRouter {
 
     routes(){
           router.get('/',jwtCheck, this.controller.getAllbyOneUser.bind(this.controller));
-          router.get('/tagCount', jwtCheck, this.controller.getEntryTagAllCounts.bind(this.controller));
+          router.get('/groupedEntriesByTag', jwtCheck, this.controller.getGroupedEntries.bind(this.controller));
           router.post('/', jwtCheck, this.controller.createOne.bind(this.controller));
           
           router.get('/:entryId', jwtCheck, this.controller.getOne.bind(this.controller));

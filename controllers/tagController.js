@@ -106,6 +106,7 @@ class tagController extends BaseController {
 // ENTRY & TAGS association actions // 
     async getEntryTags(req, res) {
         const { entryId } = req.params;
+        
 
         try{
             const entry = await this.entryModel.findByPk(entryId);
@@ -174,6 +175,14 @@ class tagController extends BaseController {
     }
 
     async createOne(req, res){
+        const jwtSub = req.auth.payload.sub;
+        const foundUser = await this.userModel.findOne({
+            where: {
+                jwtSub: jwtSub
+            }
+        })
+        const userId = foundUser.id 
+
         try {
             console.log('req.body', req.body)
             const { note, description, type, personality } = req.body;
@@ -183,6 +192,10 @@ class tagController extends BaseController {
                 type: type || null,
                 personality: personality || null
             })
+
+            const user = await this.userModel.findByPk(userId);
+            await user.addTag(newTag);
+
             res.send(newTag);
         } catch(error) {
             console.log('error', error);

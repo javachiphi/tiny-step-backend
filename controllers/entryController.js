@@ -26,6 +26,15 @@ class entryController extends BaseController {
                     userId: userId 
                 },
                 order: [['created_at', 'DESC']], 
+                include: [
+                    {
+                        model: this.tagModel,
+                        attributes: ["note", "description", "type", "id"],
+                        through: {
+                            attributes: [],
+                        },  
+                    }
+                ]
             });
             res.send(all);
         } catch(error) {
@@ -138,13 +147,15 @@ class entryController extends BaseController {
         }
     }
 
-    async getEntryTagAllCounts(req, res) {
+    async getGroupedEntries(req, res) {
+        
         const jwtSub = req.auth.payload.sub;
         const foundUser = await this.userModel.findOne({
             where: {
                 jwtSub: jwtSub
             }
         })
+
 
         console.log('foundUser', foundUser)
         const userId = foundUser.id 
@@ -153,7 +164,9 @@ class entryController extends BaseController {
             const tagCounts = await this.tagModel.findAll({
                 attributes: [
                     "id",
-                    "note"
+                    "note",
+                    "type",
+
                 //   [sequelize.fn('COUNT', sequelize.col('tag.id')), 'tagCount'],
                 ],
                 include: [
@@ -178,6 +191,8 @@ class entryController extends BaseController {
           res.status(500).json({ error: 'An error occurred while counting tags.' });
         }
       }
+
+  
       
 }
 

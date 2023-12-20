@@ -12,7 +12,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'tag_id', 
         otherKey: 'entry_id'
       })
-      this.belongsToMany(user, { through: 'user_tags'})
+      this.belongsToMany(user, { 
+        through: 'user_tags',
+        foreignKey: 'user_id'
+      })
     }
   }
   tag.init({
