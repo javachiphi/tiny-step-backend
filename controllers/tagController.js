@@ -224,7 +224,7 @@ class tagController extends BaseController {
 
             const userHasTag = userWithSpecificTag && userWithSpecificTag.tags.length > 0
             if(userHasTag){
-                return res.status(400).send('Tag already exists')
+                return res.status(200).send(existingTag)
             } else {
                 const newTag = await this.model.create({
                     note: note,
