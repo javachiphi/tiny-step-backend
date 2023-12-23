@@ -17,6 +17,8 @@ class tagRouter {
 
     routes(){
 
+        router.get('/combined', jwtCheck, this.controller.getCombinedTags.bind(this.controller));
+        
         //Basic tag CRUD 
         router.get(`/`, this.controller.getSystemTags.bind(this.controller));
         router.post(`/`, jwtCheck, this.controller.createOne.bind(this.controller));

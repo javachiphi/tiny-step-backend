@@ -1,5 +1,6 @@
 const BaseController = require("./baseController");
 const { sequelize } = require("../db/models/index.js");
+const tagService = require('../services/tagService');
 
 
 class entryController extends BaseController {
@@ -7,6 +8,7 @@ class entryController extends BaseController {
         super(model); 
         this.userModel = userModel;
         this.tagModel = tagModel; 
+        this.tagService = new tagService(tagModel, model);
         
     }
 
@@ -109,10 +111,10 @@ class entryController extends BaseController {
 
             if (tagId) {
                 // Assuming tagId is an array of tag IDs
+                console.log('tag Id?', tagId)
                 await found.setTags(tagId);
             }
 
-            // found.updateTag(tagId)???
             res.send(found);
         } catch(error) {
             console.log('error', error);
@@ -148,51 +150,23 @@ class entryController extends BaseController {
     }
 
     async getGroupedEntries(req, res) {
-        
         const jwtSub = req.auth.payload.sub;
         const foundUser = await this.userModel.findOne({
             where: {
                 jwtSub: jwtSub
             }
         })
-
-
-        console.log('foundUser', foundUser)
         const userId = foundUser.id 
-      
+
         try {
-            const tagCounts = await this.tagModel.findAll({
-                attributes: [
-                    "id",
-                    "note",
-                    "type",
-
-                //   [sequelize.fn('COUNT', sequelize.col('tag.id')), 'tagCount'],
-                ],
-                include: [
-                  {
-                    model: this.model,
-                    where: {
-                      userId: userId,
-                    },
-                     through: {
-                      attributes: [],
-                    },
-                  },
-                ],
-                // group: ['tag.id'],
-                raw: true,
-                nest: true,
-              }) 
-
-          res.send(tagCounts);
-        } catch (error) {
-          console.error('Error', error);
-          res.status(500).json({ error: 'An error occurred while counting tags.' });
+        const groupedEntries = await this.tagService.getGroupingTags(userId);
+        res.status(200).json(groupedEntries);
+        } catch(error) {
+            console.error('Error', error);
+            res.status(500).json({ error: 'An error occurred while fetching tags.' });
         }
-      }
-
-  
+    }
+    
       
 }
 

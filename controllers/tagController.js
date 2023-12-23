@@ -1,5 +1,7 @@
 const BaseController = require("./baseController");
 const { sequelize } = require("../db/models/index.js");
+const tagService = require('../services/tagService');
+
 const { Op } = require('sequelize');
 
 
@@ -8,6 +10,7 @@ class tagController extends BaseController {
         super(model); 
         this.userModel = userModel; 
         this.entryModel = entryModel; 
+        this.tagService = new tagService(model, entryModel, userModel);
     }
 
     async getSystemTags(req, res){
@@ -19,30 +22,48 @@ class tagController extends BaseController {
                     }
                 }
             });
-
             res.send(systemTags);
         } catch(error){
             cosole.error('error', error)
         }
     }
+
+    async getCombinedTags(req, res) {
+        try{
+        const jwtSub = req.auth.payload.sub;
+        const foundUser = await this.userModel.findOne({
+            where: {
+                jwtSub: jwtSub
+            }
+        })
+        const userId = foundUser.id 
+
+        const groupingTags = await this.tagService.getGroupingTags(userId);
+        const userTags = await this.tagService.getUserTags(userId);
+
+        // Combine and process as needed
+        const combinedTags = [...new Set([...groupingTags, ...userTags])]
+
+        res.send(combinedTags);
+        } catch(error) {
+            console.error('error', error);
+            res.status(500).send('Error getting tags');
+        }
+    }
+
 //USER - TAGS ASSOCIATION ACTIONS //
     // display default tags that user selected 
     async getUserTags(req,res){
         try{
             const jwtSub = req.auth.payload.sub;
-
             const foundUser = await this.userModel.findOne({
                 where: {
                     jwtSub: jwtSub
                 }
             })
             const userId = foundUser.id 
-            const user = await this.userModel.findByPk(userId);
-            const tags = await user.getTags({
-                attributes: ["note", "description", "type", "personality"]
-            });
-            res.send(tags);
-
+            const userTags = await this.tagService.getUserTags(userId);
+            res.send(userTags);
         }catch(error){
             console.log('error', error);
             res.status(500).send('Error getting one')
@@ -82,7 +103,6 @@ class tagController extends BaseController {
     async removeUserTags(req, res) {
         const { tagId } = req.params;
         const tagsToDelete = req.body
-
 
         const jwtSub = req.auth.payload.sub;
 
@@ -174,6 +194,7 @@ class tagController extends BaseController {
         }
     }
 
+// check if this is over engineered after using combined tags and frontend validation
     async createOne(req, res){
         const jwtSub = req.auth.payload.sub;
         const foundUser = await this.userModel.findOne({
@@ -182,21 +203,46 @@ class tagController extends BaseController {
             }
         })
         const userId = foundUser.id 
-
+        const { note, description, type, personality } = req.body;
+        console.log('req.body', req.body);
         try {
-            console.log('req.body', req.body)
-            const { note, description, type, personality } = req.body;
-            const newTag = await this.model.create({
-                note: note,
-                description: description || null,
-                type: type || null,
-                personality: personality || null
-            })
 
             const user = await this.userModel.findByPk(userId);
-            await user.addTag(newTag);
+            const existingTag = await this.model.findOne({
+                where: {
+                    note: note,
+                    type: type
+                }
+            })
+
+            const userWithSpecificTag = existingTag && await this.userModel.findOne({
+                where: { id: userId },
+                include: [{
+                model: this.model,
+                where: { id: existingTag.id },
+                through: {
+                    attributes: [],
+                    },  
+                required: false  // Set to false to still return the user even if the tag isn't associated
+                }]
+            });
+
+            const userHasTag = userWithSpecificTag && userWithSpecificTag.tags.length > 0
+            if(userHasTag){
+                return res.status(400).send('Tag already exists')
+            } else {
+                const newTag = await this.model.create({
+                    note: note,
+                    description: description || null,
+                    type: type || null,
+                    personality: personality || null
+                })
+
+                await user.addTag(newTag);
+                console.log('since new tag')
 
             res.send(newTag);
+            }
         } catch(error) {
             console.log('error', error);
             res.status(500).send('Error creating tag')
