@@ -37,13 +37,8 @@ class tagController extends BaseController {
             }
         })
         const userId = foundUser.id 
-
-        const groupingTags = await this.tagService.getGroupingTags(userId);
-        const userTags = await this.tagService.getUserTags(userId);
-
-        // Combine and process as needed
-        const combinedTags = [...new Set([...groupingTags, ...userTags])]
-
+        
+        const combinedTags = await this.tagService.getCombinedTags(userId);
         res.send(combinedTags);
         } catch(error) {
             console.error('error', error);

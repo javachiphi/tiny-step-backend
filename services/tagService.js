@@ -1,3 +1,6 @@
+const { combineAndFilterUniqueTags } = require('../utils/tagUtils');
+
+
 class TagService {
     constructor(tagModel, entryModel, userModel) {
         this.tagModel = tagModel;
@@ -50,7 +53,7 @@ class TagService {
         const formattedData = Object.keys(formatted).map(note => {
             return {
                 id: formatted[note].id,
-                label: note, 
+                note: note, 
                 type: formatted[note].type,
                 count: formatted[note].count,
                 created_at: formatted[note].created_at,
@@ -61,6 +64,16 @@ class TagService {
 
         return formattedData;
     }
+
+    async getCombinedTags(userId) {
+      
+        const groupingTags = await this.getGroupingTags(userId);
+        const entryTags = await this.getUserTags(userId);
+        
+        // Use the utility function to combine and filter tags
+        return combineAndFilterUniqueTags(groupingTags, entryTags);
+    }
+
 }
 
 module.exports = TagService;
