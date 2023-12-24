@@ -48,14 +48,29 @@ class entryController extends BaseController {
     async getOne(req, res){
         try {
             const { entryId } = req.params
-            const found = await this.model.findByPk(entryId);
-            res.send(found)
+            const found = await this.model.findByPk(entryId, {
+                include: [{
+                    model: this.tagModel,
+                    through: {
+                        attributes: [],
+                    },
+                }]
+            });
+
+            if(found){
+                res.send(found)
+            } else {
+                res.status(404).send('Entry not found')
+            }
+
+            
         } catch(error) {
             console.log('error', error);
             res.status(500).send('Error getting')
         }
     }
 
+    
     async createOne(req, res){
         try {
             const jwtSub = req.auth.payload.sub;
