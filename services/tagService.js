@@ -40,6 +40,7 @@ class TagService {
                 formatted[tag.note] = {
                     id: tag.id,
                     type: tag.type,
+                    note: tag.note,
                     description: tag.description,
                     count: tag.entries.length,
                     created_at: tag.created_at,
