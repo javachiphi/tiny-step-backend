@@ -17,51 +17,44 @@ class TagService {
     async getGroupingTags(userId) {
         // Step 1: Fetch tags with entry IDs
         const tagsWithEntries = await this.tagModel.findAll({
-            attributes: ["id", "note", "type", "created_at", "updated_at"],
+            attributes: ["id", "note", "description", "type", "created_at", "updated_at"],
             order: [['created_at', 'DESC']], 
             include: [{
                 model: this.entryModel,
                 attributes:['id', 'observation', 'solution', 'created_at', 'updated_at'],
                 where: { userId: userId },
                 through: { attributes: [] },
+                include: [{ // Include tags for each entry
+                    model: this.tagModel,
+                    attributes: ['id', 'type', 'note'],
+                    through: { attributes: [] },
+                }],
             }],
-            raw: true,
             nest: true,
         });
 
         // Step 2: Count and group entries per tag
         let formatted = {};  
         tagsWithEntries.forEach(tag => {
-            const note = tag.note;
-            const entry = tag.entries; 
-    
-            if(!formatted[note]){
-                formatted[note] = {
+            if(!formatted[tag.note]){
+                formatted[tag.note] = {
                     id: tag.id,
                     type: tag.type,
-                    count: 0,
+                    description: tag.description,
+                    count: tag.entries.length,
                     created_at: tag.created_at,
                     updated_at: tag.updated_at,
-                    entries:[]
+                    entries: tag.entries.map(entry => {
+                        return {
+                            ...entry.get({plain: true}),
+                            tags: entry.tags.map(tag => tag.get({plain: true}))
+                        };
+                    })
                 };
             }
-    
-            formatted[note].entries.push(entry);
-            formatted[note].count += 1; 
-        })
-    
-        const formattedData = Object.keys(formatted).map(note => {
-            return {
-                id: formatted[note].id,
-                note: note, 
-                type: formatted[note].type,
-                count: formatted[note].count,
-                created_at: formatted[note].created_at,
-                updated_at: formatted[note].updated_at,
-                entries: formatted[note].entries,
-                }
-        })
 
+        });
+        const formattedData = Object.values(formatted);
         return formattedData;
     }
 
