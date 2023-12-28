@@ -96,9 +96,7 @@ class tagController extends BaseController {
     
     // user removed default tag 
     async removeUserTags(req, res) {
-        const { tagId } = req.params;
-        const tagsToDelete = req.body
-
+        const  tagsToDelete  = req.body
         const jwtSub = req.auth.payload.sub;
 
         const foundUser = await this.userModel.findOne({
@@ -111,6 +109,8 @@ class tagController extends BaseController {
         try {
             const user = await this.userModel.findByPk(userId);
             await user.removeTags(tagsToDelete);
+            const check = await user.getTags();
+            console.log('check', check);
             res.status(200).json({message: `tags removed: ${tagsToDelete}`})
         }catch(error){
             console.error('error', error);
@@ -269,17 +269,31 @@ class tagController extends BaseController {
     }
 
     async deleteOne(req, res){
+        const transaction = await sequelize.transaction();
+        const { tagId } = req.params;
+        //remove association with entries then remove
         try {
-            const { tagId } = req.params; 
-            const found = await this.model.findByPk(tagId);
-            const result = await found.destroy();
-            res.status(200).send(result);
-        } catch(error) {
-            console.log('error', error);
-            res.status(500).send('Error deleting')
+            const found = await this.model.findByPk(tagId, { transaction });
+            const entries = await found.getEntries({ transaction });
+            await found.removeEntries(entries, { transaction });
+            
+            // Re-checking entries
+            const checkEntries = await found.getEntries({ transaction });
+            console.log('Entries after removal attempt:', checkEntries);
+
+            if (checkEntries.length === 0) {
+                await found.destroy({ transaction });
+                await transaction.commit();
+                res.status(200).send('Tag deleted successfully');
+            } else {
+                throw new Error('Failed to remove all entries');
+            }
+        } catch (error) {
+            await transaction.rollback();
+            console.error('Error:', error);
+            res.status(500).send('Error deleting');
         }
     }
-
 }
 
 module.exports = tagController;
