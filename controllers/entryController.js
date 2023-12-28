@@ -2,6 +2,8 @@ const BaseController = require("./baseController");
 const { sequelize } = require("../db/models/index.js");
 const tagService = require('../services/tagService');
 
+const { Op } = require('sequelize');
+
 
 class entryController extends BaseController {
     constructor(model, userModel, tagModel){
@@ -15,35 +17,69 @@ class entryController extends BaseController {
 
     async getAllbyOneUser(req, res){
         const jwtSub = req.auth.payload.sub;
-        const foundUser = await this.userModel.findOne({
-            where: {
-                jwtSub: jwtSub
-            }
-        })
-        const userId = foundUser.id 
+        const foundUser = await this.userModel.findOne({where: {jwtSub: jwtSub}})
+        const userId = foundUser.id;
+        const { page = 1, limit = 10 } = req.query;
         
         try {
-            const all = await this.model.findAll({
-                where: {
-                    userId: userId 
-                },
-                order: [['created_at', 'DESC']], 
-                include: [
-                    {
-                        model: this.tagModel,
-                        attributes: ["note", "description", "type", "id"],
-                        through: {
-                            attributes: [],
-                        },  
-                    }
-                ]
+            const offset = (page - 1) * limit;
+            const { count, rows } = await this.model.findAndCountAll({
+                where: {userId: userId},
+                order: [['created_at', 'DESC']],
+                limit: parseInt(limit),
+                offset: parseInt(offset),
+                include: [{
+                    model: this.tagModel,
+                    attributes: ["note", "description", "type", "id"],
+                    through: {attributes: []},
+                }],
             });
-            res.send(all);
+            const totalPages = Math.ceil(count / limit);
+            res.send({ count, rows, totalPages, page: parseInt(page) });
+            // res.send(all);
         } catch(error) {
             console.log('error', error);
             res.status(500).send('Error getting all')
         }
     }
+
+    async getFiltered(req, res){
+        const jwtSub = req.auth.payload.sub;
+        const foundUser = await this.userModel.findOne({ where: { jwtSub: jwtSub } });
+        const userId = foundUser.id;
+        const { page = 1, limit = 10 } = req.query;
+    
+        try {
+            const offset = (page - 1) * limit;
+            const { count, rows } = await this.model.findAndCountAll({
+                where: {
+                    userId: userId,
+                    [Op.or]: [
+                        sequelize.literal(`(
+                            SELECT COUNT(*)
+                            FROM "entry_tags"
+                            WHERE "entry_tags"."entry_id" = "entry"."id"
+                        ) = 0`),
+                        { solution: { [Op.or]: [null, ''] } }
+                    ]
+                },
+                order: [['created_at', 'DESC']],
+                limit: parseInt(limit),
+                offset: parseInt(offset),
+                include: [{
+                    model: this.tagModel,
+                    attributes: ["note", "description", "type", "id"],
+                    through: {attributes: []},
+                }],
+            });
+            const totalPages = Math.ceil(count / limit);
+            res.send({ count, rows, totalPages, page: parseInt(page) });
+        } catch (error) {
+            console.log('error', error);
+            res.status(500).send('Error getting filtered entries')
+        }
+    }
+    
 
     async getOne(req, res){
         try {
