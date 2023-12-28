@@ -26,7 +26,7 @@ class TagService {
                 through: { attributes: [] },
                 include: [{ // Include tags for each entry
                     model: this.tagModel,
-                    attributes: ['id', 'type', 'note'],
+                    attributes: ['id', 'type', 'note', 'description', 'created_at', 'updated_at'],
                     through: { attributes: [] },
                 }],
             }],
@@ -45,12 +45,15 @@ class TagService {
                     count: tag.entries.length,
                     created_at: tag.created_at,
                     updated_at: tag.updated_at,
-                    entries: tag.entries.map(entry => {
+                    entries: 
+                        tag.entries
+                        .map(entry => {
                         return {
                             ...entry.get({plain: true}),
                             tags: entry.tags.map(tag => tag.get({plain: true}))
-                        };
-                    })
+                            };
+                        })
+                        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
                 };
             }
 
