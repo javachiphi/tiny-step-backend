@@ -35,18 +35,19 @@ class TagService {
 
         // Step 2: Count and group entries per tag
         let formatted = {};  
-        tagsWithEntries.forEach(tag => {
+        tagsWithEntries.forEach(tagData => {
+            const tag = tagData.get({ plain: true }); 
             if(!formatted[tag.note]){
                 formatted[tag.note] = {
                     id: tag.id,
                     type: tag.type,
                     note: tag.note,
                     description: tag.description,
-                    count: tag.entries.length,
                     created_at: tag.created_at,
                     updated_at: tag.updated_at,
+                    count: tag.entries.length,
                     entries: 
-                        tag.entries
+                        tagData.entries
                         .map(entry => {
                         return {
                             ...entry.get({plain: true}),
