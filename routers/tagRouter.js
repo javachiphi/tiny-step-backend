@@ -18,15 +18,16 @@ class tagRouter {
     routes(){
 
         router.get('/combined', jwtCheck, this.controller.getCombinedTags.bind(this.controller));
-        
+    
         //Basic tag CRUD 
         router.get(`/`, this.controller.getSystemTags.bind(this.controller));
         router.post(`/`, jwtCheck, this.controller.createOne.bind(this.controller));
         
+      
         router.get('/:tagId',this.controller.getOne.bind(this.controller));
         router.put('/:tagId',this.controller.updateOne.bind(this.controller));
         router.delete('/:tagId', jwtCheck, this.controller.deleteOne.bind(this.controller));
-        
+        router.get('/:tagId/assocEntryTagsCount', jwtCheck, this.controller.getAssociatedEntryTagsCount.bind(this.controller));
 
         //send user selected 
         

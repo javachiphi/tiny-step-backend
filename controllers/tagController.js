@@ -13,6 +13,39 @@ class tagController extends BaseController {
         this.tagService = new tagService(model, entryModel, userModel);
     }
 
+    async getAssociatedEntryTagsCount(req, res) {
+        const jwtSub = req.auth.payload.sub;
+        const foundUser = await this.userModel.findOne({ where: { jwtSub: jwtSub } });
+        const userId = foundUser.id;
+        const { tagId } = req.params;
+    
+        try {
+
+            const [results, metadata] = await sequelize.query(`
+            SELECT
+                t2.id, t2.note, t2.type, t2.description,
+                COUNT(t2.id) as tagCount
+            FROM 
+                tags AS t1
+                INNER JOIN entry_tags AS et ON t1.id = et.tag_id
+                INNER JOIN entries AS e ON et.entry_id = e.id
+                INNER JOIN entry_tags AS et2 ON e.id = et2.entry_id
+                INNER JOIN tags AS t2 ON et2.tag_id = t2.id
+            WHERE 
+                t1.id = :tagId AND e.user_id = :userId
+            GROUP BY t2.id, t2.note, t2.type, t2.description
+            ORDER BY tagCount DESC
+        `, { replacements: { tagId: tagId, userId: userId } });
+        
+
+            res.status(200).json(results);
+
+        } catch(error) {
+            console.log('error', error);
+            res.status(500).send('Error getting all')
+        }
+    }
+
     async getSystemTags(req, res){
         try{
             const systemTags = await this.model.findAll({
