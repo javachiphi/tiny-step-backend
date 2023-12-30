@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
         key: "id",
       },
     },
-    isDefault: {
+    is_default: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       allowNull: false

@@ -26,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
     description: DataTypes.STRING,
     type: DataTypes.STRING, // myers_briggs, CBT, user_generated
     personality: DataTypes.STRING,
-    isDefault: {
+    is_default: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
       allowNull: false
