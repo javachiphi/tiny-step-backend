@@ -22,7 +22,6 @@ module.exports = (sequelize, DataTypes) => {
   entry.init({
     observation: DataTypes.TEXT,
     solution: DataTypes.TEXT,
-    // userId: DataTypes.
     userId: {
       type: DataTypes.INTEGER,
       references: {
@@ -30,6 +29,11 @@ module.exports = (sequelize, DataTypes) => {
         key: "id",
       },
     },
+    isDefault: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false
+    }
   }, {
     sequelize,
     modelName: 'entry',
