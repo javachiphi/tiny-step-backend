@@ -1,13 +1,17 @@
 const express = require('express')
 const app = express()
-const port = 3001
+const port = process.env.PORT || 3001;
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 const cors = require('cors');
 
 const db = require('./db/models/index')
 const { entry, tag, user } = db;
-app.use(cors({origin: 'http://localhost:3000'}))
+
+const frontUrl = process.env.FRONT_URL || "https://incomparable-starburst-a32596.netlify.app";
+
+app.use("/", cors({ origin: frontUrl }));
+
 
 
 
