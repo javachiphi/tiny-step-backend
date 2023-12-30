@@ -14,12 +14,8 @@ class userRouter {
     }
 
     routes(){
-          // router.get(`/`, this.controller.getAll.bind(this.controller));
-          router.get(`/`, jwtCheck, this.controller.createOne.bind(this.controller));
-          
-          router.get('/:userId',this.controller.getOne.bind(this.controller));
-          router.put('/:userId',this.controller.updateOne.bind(this.controller));
-          router.delete('/:userId',this.controller.deleteOne.bind(this.controller));
+      router.post(`/`, jwtCheck, this.controller.createOne.bind(this.controller));
+      router.delete('/:userId',this.controller.deleteOne.bind(this.controller));
 
         return router;
 

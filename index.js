@@ -32,7 +32,7 @@ app.use('/tags', tagRouter);
 
 
 //user 
-const userController = new UserController(user);
+const userController = new UserController(user, entry, tag);
 const userRouter = new UserRouter(userController).routes();
 app.use('/user', userRouter);
 
