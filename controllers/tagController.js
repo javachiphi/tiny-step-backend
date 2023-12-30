@@ -20,8 +20,8 @@ class tagController extends BaseController {
         const { tagId } = req.params;
     
         try {
-
-            const [results, metadata] = await sequelize.query(`
+         
+            const [results ] = await sequelize.query(`
             SELECT
                 t2.id, t2.note, t2.type, t2.description,
                 COUNT(t2.id) as tagCount
@@ -57,7 +57,7 @@ class tagController extends BaseController {
             });
             res.send(systemTags);
         } catch(error){
-            cosole.error('error', error)
+            console.error('error', error)
         }
     }
 

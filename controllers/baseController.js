@@ -1,6 +1,3 @@
-const express =require("express");
-
-
 class BaseController {
     constructor(model){
         this.model = model;

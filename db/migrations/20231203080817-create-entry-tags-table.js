@@ -33,21 +33,9 @@ module.exports = {
         type: Sequelize.DATE,
       },
     })
-    /**
-     * Add altering commands here.
-     *
-     * Example:
-     * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
-     */
   },
 
-  async down (queryInterface, Sequelize) {
+  async down (queryInterface) {
     await queryInterface.dropTable("entry_tags");
-    /**
-     * Add reverting commands here.
-     *
-     * Example:
-     * await queryInterface.dropTable('users');
-     */
   }
 };

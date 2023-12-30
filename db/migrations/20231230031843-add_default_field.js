@@ -16,7 +16,7 @@ module.exports = {
     });
   },
 
-  async down (queryInterface, Sequelize) {
+  async down (queryInterface) {
     await queryInterface.removeColumn('tags', 'is_default');
     await queryInterface.removeColumn('entries', 'is_default');
   }
