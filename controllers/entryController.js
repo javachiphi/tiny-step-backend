@@ -4,7 +4,6 @@ const tagService = require('../services/tagService');
 
 const { Op } = require('sequelize');
 
-
 class entryController extends BaseController {
     constructor(model, userModel, tagModel){
         super(model); 
@@ -15,32 +14,40 @@ class entryController extends BaseController {
     }
 
 
-    async getAllbyOneUser(req, res){
+    async getAllbyOneUser(req, res) {
         const jwtSub = req.auth.payload.sub;
-        const foundUser = await this.userModel.findOne({where: {jwtSub: jwtSub}})
-        const userId = foundUser.id;
+        const user = await this.userModel.findOne({ where: { jwtSub: jwtSub } });
+
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+    
         const { page = 1, limit = 10 } = req.query;
-        
+        const userId = user.id;
+        const offset = (page - 1) * limit;
+    
         try {
-            const offset = (page - 1) * limit;
-            const { count, rows } = await this.model.findAndCountAll({
-                where: {userId: userId},
-                order: [['created_at', 'DESC']],
-                limit: parseInt(limit),
-                offset: parseInt(offset),
-                include: [{
-                    model: this.tagModel,
-                    attributes: ["note", "description", "type", "id"],
-                    through: {attributes: []},
-                }],
-            });
+            const { count, rows } = await this.fetchEntries(userId, limit, offset);
             const totalPages = Math.ceil(count / limit);
             res.send({ count, rows, totalPages, page: parseInt(page) });
-            // res.send(all);
-        } catch(error) {
+        } catch (error) {
             console.log('error', error);
-            res.status(500).send('Error getting all')
+            res.status(500).send('Error getting all');
         }
+    }
+    
+    async fetchEntries(userId, limit, offset) {
+        return await this.model.findAndCountAll({
+            where: { userId: userId },
+            order: [['created_at', 'DESC']],
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            include: [{
+                model: this.tagModel,
+                attributes: ["note", "description", "type", "id"],
+                through: { attributes: [] },
+            }],
+        });
     }
 
     async getFiltered(req, res){

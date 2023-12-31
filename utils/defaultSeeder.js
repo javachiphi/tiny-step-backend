@@ -7,10 +7,10 @@ class defaultSeeder {
         this.tagModel = tagModel;
     }
 
-    async seedTagData(user, tagData) {
+    async seedTagData(user, tagData, transaction) {
         try {
-            const tags = await this.tagModel.bulkCreate(tagData);
-            await user.addTags(tags);
+            const tags = await this.tagModel.bulkCreate(tagData, { transaction });
+            await user.addTags(tags, { transaction });
             return tags;
         } catch (error) {
             console.log('error in seedTagData', error);
@@ -19,11 +19,11 @@ class defaultSeeder {
         }
     }
 
-    async seedEntryData(user, entryData, tagsCreated) {
+    async seedEntryData(user, entryData, tagsCreated, transaction) {
         try {
             const userId = user.id
-            const entry = await this.entryModel.create({...entryData, userId: userId});
-            await entry.setTags(tagsCreated);
+            const entry = await this.entryModel.create({...entryData, userId: userId} , { transaction });
+            await entry.setTags(tagsCreated, { transaction });
             return entry;
         } catch (error) {
             console.log('error in seedTagData', error)
@@ -31,16 +31,23 @@ class defaultSeeder {
         }
     }
     
-    async seedDefaultData(jwtSub) {
-        const exists = await this.checkDefaultDataExists(jwtSub);
+    async seedDefaultData(jwtSub, transaction) {
+        
+        const exists = await this.checkDefaultDataExists(jwtSub, transaction);
         if (exists) return { message: 'Default data already exists', data: null};
 
         try {
-            const user = await this.userModel.findOne({ where: { jwtSub: jwtSub } });
+            const user = await this.userModel.findOne({ where: { jwtSub: jwtSub }, transaction: transaction });
+            
+            if (!user) {
+                throw new Error('User not found');
+            }
+
             const results = await Promise.all(Object.values(data).map(async (batch) => {
-                const tagResult = await this.seedTagData(user, batch.tagData);
-                const entryResult = await this.seedEntryData(user, batch.entryData, tagResult);
-                return { tagResult, entryResult };
+                const tagResult = await this.seedTagData(user, batch.tagData, transaction);
+                const entryResult = await this.seedEntryData(user, batch.entryData, tagResult, transaction);
+                // return { tagResult, entryResult };
+                return entryResult
             }));
     
             return results;
@@ -51,12 +58,13 @@ class defaultSeeder {
 
     }
 
-    async checkDefaultDataExists(jwtSub) {
+    async checkDefaultDataExists(jwtSub, transaction) {
         const user = await this.userModel.findOne({ where: { jwtSub: jwtSub }, 
             include: [
                 { model: this.tagModel },
                 { model: this.entryModel }
-            ]
+            ],
+            transaction
          });
 
          if (!user) return false;

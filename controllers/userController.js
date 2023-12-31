@@ -8,27 +8,29 @@ class userController extends BaseController {
         this.defaultSeeder = new defaultSeeder(model, entryModel, tagModel);
     }
     
-    async createOne(req, res) {
+    async createUserIfNotExist(req, res) {
+        const transaction = await this.model.sequelize.transaction();
         try {
             const jwtSub = req.auth.payload.sub;
             const [user, created] = await this.model.findOrCreate({
                 where: { jwtSub: jwtSub },
-                defaults: { jwtSub: jwtSub }
+                defaults: { jwtSub: jwtSub },
+                transaction
             });
     
-            if (created) {
-                const seed = await this.defaultSeeder.seedDefaultData(jwtSub);
-                res.status(200).send({ user, seed });
-            } else {
+            if (created) { 
+                await this.defaultSeeder.seedDefaultData(jwtSub, transaction);
+            } 
 
-                res.status(200).send(user);
-            }
-    
+            await transaction.commit();
+            res.status(200).send({ user, isNewUser: created });
         } catch(error) {
-            console.log('error', error);
-            res.status(500).send('Error creating');
+            await transaction.rollback();
+            res.status(500).send('Error in user creation/seeding');
         }
     }
+
+
     
     async deleteOne(req, res){
         try {

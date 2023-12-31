@@ -14,7 +14,7 @@ class userRouter {
     }
 
     routes(){
-      router.post(`/`, jwtCheck, this.controller.createOne.bind(this.controller));
+      router.post(`/`, jwtCheck, this.controller.createUserIfNotExist.bind(this.controller));
       router.delete('/:userId',this.controller.deleteOne.bind(this.controller));
 
         return router;
