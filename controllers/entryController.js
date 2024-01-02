@@ -134,9 +134,18 @@ class entryController extends BaseController {
             })
          
             if(tagId) {
-             newEntry.addTag(tagId);
+                await newEntry.addTag(tagId);
             }
-            res.send(newEntry);
+
+            const entryWithTags = await this.model.findByPk(newEntry.id, {
+                include: [{
+                    model: this.tagModel,
+                    through: {
+                        attributes: [],
+                    },
+                }]
+            });
+            res.send(entryWithTags);
         } catch(error) {
             console.log('error', error);
             res.status(500).send('Error creating')
