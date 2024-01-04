@@ -30,7 +30,7 @@ class TagService {
                 "updated_at",
                 [sequelize.fn("COUNT", sequelize.col("entries.id")), "entryCount"]
             ],
-            order: [['created_at', 'DESC']], 
+            order: [['entryCount', 'DESC']], 
             include: [{
                 model: this.entryModel,
                 attributes:[],
