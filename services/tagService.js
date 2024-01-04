@@ -1,4 +1,5 @@
 const { combineAndFilterUniqueTags } = require('../utils/tagUtils');
+const { sequelize } = require("../db/models/index.js");
 
 
 class TagService {
@@ -9,67 +10,45 @@ class TagService {
     }
 
     async getUserTags(userId) {
-        const user = await this.userModel.findByPk( userId);
-         const tags = await user.getTags({ order: [['created_at', 'DESC']] }); 
+        const user = await this.userModel.findByPk(userId);
+         const tags = await user.getTags({ 
+            order: [['created_at', 'DESC']], 
+            attributes: ["id", "note", "description", "type", "created_at", "updated_at"],
+        }); 
         return tags;
     }
 
-    async getGroupingTags(userId) {
+    async getEntryTags(userId) {
         // Step 1: Fetch tags with entry IDs
         const tagsWithEntries = await this.tagModel.findAll({
-            attributes: ["id", "note", "description", "type", "created_at", "updated_at"],
+            attributes: [
+                "id", 
+                "note", 
+                "description", 
+                "type", 
+                "created_at", 
+                "updated_at",
+                [sequelize.fn("COUNT", sequelize.col("entries.id")), "entryCount"]
+            ],
             order: [['created_at', 'DESC']], 
             include: [{
                 model: this.entryModel,
-                attributes:['id', 'observation', 'solution', 'created_at', 'updated_at'],
+                attributes:[],
                 where: { userId: userId },
                 through: { attributes: [] },
-                include: [{ // Include tags for each entry
-                    model: this.tagModel,
-                    attributes: ['id', 'type', 'note', 'description', 'created_at', 'updated_at'],
-                    through: { attributes: [] },
-                }],
             }],
+            group: ['tag.id'],
             nest: true,
         });
 
-        // Step 2: Count and group entries per tag
-        let formatted = {};  
-        tagsWithEntries.forEach(tagData => {
-            const tag = tagData.get({ plain: true }); 
-            if(!formatted[tag.note]){
-                formatted[tag.note] = {
-                    id: tag.id,
-                    type: tag.type,
-                    note: tag.note,
-                    description: tag.description,
-                    created_at: tag.created_at,
-                    updated_at: tag.updated_at,
-                    count: tag.entries.length,
-                    entries: 
-                        tagData.entries
-                        .map(entry => {
-                        return {
-                            ...entry.get({plain: true}),
-                            tags: entry.tags.map(tag => tag.get({plain: true}))
-                            };
-                        })
-                        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                };
-            }
-
-        });
-        const formattedData = Object.values(formatted);
-        return formattedData;
+        return tagsWithEntries;
     }
 
-    async getCombinedTags(userId) {
-      
-        const groupingTags = await this.getGroupingTags(userId);
-        const entryTags = await this.getUserTags(userId);
-        
-        // Use the utility function to combine and filter tags
-        return combineAndFilterUniqueTags(groupingTags, entryTags);
+    async getCombinedTags(userId) {  
+        const entryTags = await this.getEntryTags(userId);
+        const userTags = await this.getUserTags(userId);
+            // Use the utility function to combine and filter tags
+        return combineAndFilterUniqueTags(entryTags, userTags);
     }
 
 }

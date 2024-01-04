@@ -1,10 +1,10 @@
 /**
  * Combines and filters tags for uniqueness based on id and note.
- * @param {Array} groupingTags - An array of tags with potentially extra attributes.
- * @param {Array} entryTags - An array of tags with basic attributes.
+ * @param {Array} entryTags - An array of tags with potentially extra attributes.
+ * @param {Array} getUserTags - An array of tags with basic attributes.
  * @returns {Array} A combined and filtered array of unique tags.
  */
-const combineAndFilterUniqueTags = (groupingTags, entryTags) => {
+const combineAndFilterUniqueTags = (entryTags, getUserTags) => {
     const uniqueTagsMap = new Map();
 
     const addTagToMap = (tag) => {
@@ -14,9 +14,9 @@ const combineAndFilterUniqueTags = (groupingTags, entryTags) => {
         }
     };
 
-    // Add tags to the map, groupingTags first to give them precedence
-    groupingTags.forEach(addTagToMap);
+    // Add tags to the map, entryTags first to give them precedence
     entryTags.forEach(addTagToMap);
+    getUserTags.forEach(addTagToMap);
 
     return Array.from(uniqueTagsMap.values());
 };

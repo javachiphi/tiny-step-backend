@@ -2,9 +2,6 @@ const BaseController = require("./baseController");
 const { sequelize } = require("../db/models/index.js");
 const tagService = require('../services/tagService');
 
-const { Op } = require('sequelize');
-
-
 class tagController extends BaseController {
     constructor(model, userModel, entryModel){
         super(model); 
@@ -46,20 +43,34 @@ class tagController extends BaseController {
         }
     }
 
-    async getSystemTags(req, res){
-        try{
-            const systemTags = await this.model.findAll({
-                where: {
-                    type: {
-                        [Op.ne]: 'user_generated'
-                    }
-                }
-            });
-            res.send(systemTags);
-        } catch(error){
-            console.error('error', error)
+    async getTags(req, res){
+        const tagType = req.query.tagType; 
+        const jwtSub = req.auth.payload.sub;
+        const user = await this.userModel.findOne({
+            where: {
+                jwtSub: jwtSub
+            }
+        })
+        
+        try {
+            // const userTags = 
+            const queryOptions = {
+                order: [['created_at', 'DESC']],
+            };
+    
+            if (tagType) {
+                queryOptions.where = { type: tagType };
+            }
+            const tags = await user.getTags(queryOptions)
+            
+            res.json(tags);
+        } catch (error) {
+            console.error('Error getting tags:', error);
+            res.status(500).send('Server Error');
         }
     }
+
+
 
     async getCombinedTags(req, res) {
         try{
@@ -79,135 +90,8 @@ class tagController extends BaseController {
         }
     }
 
-//USER - TAGS ASSOCIATION ACTIONS //
-    // display default tags that user selected 
-    async getUserTags(req,res){
-        try{
-            const jwtSub = req.auth.payload.sub;
-            const foundUser = await this.userModel.findOne({
-                where: {
-                    jwtSub: jwtSub
-                }
-            })
-            const userId = foundUser.id 
-            const userTags = await this.tagService.getUserTags(userId);
-            res.send(userTags);
-        }catch(error){
-            console.log('error', error);
-            res.status(500).send('Error getting one')
-        }
-    }
 
-    // user addede default tags to their profile" - during onboarding 
-    async addUserTags(req, res) {
-        const tagsToAdd = req.body.idsToAdd
-
-        const jwtSub = req.auth.payload.sub;
-
-        const foundUser = await this.userModel.findOne({
-            where: {
-                jwtSub: jwtSub
-            }
-        })
-        const userId = foundUser.id 
     
-        try {
-            const user = await this.userModel.findByPk(userId);
-            if (!user) {
-                return res.status(404).send('User not found');
-            }
-    
-            // const tagIds = tagsToAdd.map(tag => tag.tagId);
-            await user.addTags(tagsToAdd);
-    
-            res.status(200).json({ message: "Tags added successfully" });
-        } catch (error) {
-            console.error('Error adding tags:', error);
-            res.status(500).send('Error adding tags');
-        }
-    }
-    
-    // user removed default tag 
-    async removeUserTags(req, res) {
-        const  tagsToDelete  = req.body
-        const jwtSub = req.auth.payload.sub;
-
-        const foundUser = await this.userModel.findOne({
-            where: {
-                jwtSub: jwtSub
-            }
-        })
-        const userId = foundUser.id 
-       
-        try {
-            const user = await this.userModel.findByPk(userId);
-            await user.removeTags(tagsToDelete);
-            const check = await user.getTags();
-            console.log('check', check);
-            res.status(200).json({message: `tags removed: ${tagsToDelete}`})
-        }catch(error){
-            console.error('error', error);
-            res.status(500).send('Error removing tags');
-        }
-    }
-
-// ENTRY & TAGS association actions // 
-    async getEntryTags(req, res) {
-        const { entryId } = req.params;
-        
-
-        try{
-            const entry = await this.entryModel.findByPk(entryId);
-            if(!entry){
-                return res.status(404).send('entry not found')
-            }
-
-            const tags = await entry.getTags();
-            res.status(200).json(tags);
-        } catch(error) {
-            console.error('Error fetching tags:', error);
-            res.status(500).send('Error fetching tags');
-        }
-    }
-
-    async addEntryTag(req, res) {
-        const { entryId } = req.params;
-        const { tagId } = req.body;
-
-        try {
-            const entry = await this.entryModel.findByPk(entryId);
-            const tag = await this.model.findByPk(tagId);
-
-            if (!entry || !tag) {
-                return res.status(404).send('Entry or Tag not found');
-            }
-
-            await entry.addTag(tag);
-            res.status(200).json({ message: "Tag added to entry successfully" });
-        } catch (error) {
-            console.error('Error adding tag to entry:', error);
-            res.status(500).send('Error adding tag to entry');
-        }
-    }
-
-    async removeEntryTag(req, res) {
-        const { entryId, tagId } = req.params;
-
-        try {
-            const entry = await this.entryModel.findByPk(entryId);
-            const tag = await this.model.findByPk(tagId);
-
-            if (!entry || !tag) {
-                return res.status(404).send('Entry or Tag not found');
-            }
-
-            await entry.removeTag(tag);
-            res.status(200).json({ message: "Tag removed from entry successfully" });
-        } catch (error) {
-            console.error('Error removing tag from entry:', error);
-            res.status(500).send('Error removing tag from entry');
-        }
-    }
 
 
 /// BASIC CRUD OPERATIONS //// 0Auth add currentUser id
@@ -304,17 +188,28 @@ class tagController extends BaseController {
     async deleteOne(req, res){
         const transaction = await sequelize.transaction();
         const { tagId } = req.params;
+        const jwtSub = req.auth.payload.sub;
+        const user = await this.userModel.findOne({
+            where: {
+                jwtSub: jwtSub
+            }
+        })
+
         //remove association with entries then remove
         try {
             const found = await this.model.findByPk(tagId, { transaction });
             const entries = await found.getEntries({ transaction });
             await found.removeEntries(entries, { transaction });
+            // TEST DELETE BUTTON IN FRONTEND: remove tags from user-tag junction table 
+            await user.removeTag(tagId, {transaction});
+            
             
             // Re-checking entries
             const checkEntries = await found.getEntries({ transaction });
             console.log('Entries after removal attempt:', checkEntries);
 
             if (checkEntries.length === 0) {
+            
                 await found.destroy({ transaction });
                 await transaction.commit();
                 res.status(200).send('Tag deleted successfully');
@@ -325,6 +220,59 @@ class tagController extends BaseController {
             await transaction.rollback();
             console.error('Error:', error);
             res.status(500).send('Error deleting');
+        }
+    }
+
+   //USER - TAGS ASSOCIATION ACTIONS
+    async addUserTags(req, res) {
+        const tagsToAdd = req.body.idsToAdd
+
+        const jwtSub = req.auth.payload.sub;
+
+        const foundUser = await this.userModel.findOne({
+            where: {
+                jwtSub: jwtSub
+            }
+        })
+        const userId = foundUser.id 
+    
+        try {
+            const user = await this.userModel.findByPk(userId);
+            if (!user) {
+                return res.status(404).send('User not found');
+            }
+    
+            // const tagIds = tagsToAdd.map(tag => tag.tagId);
+            await user.addTags(tagsToAdd);
+    
+            res.status(200).json({ message: "Tags added successfully" });
+        } catch (error) {
+            console.error('Error adding tags:', error);
+            res.status(500).send('Error adding tags');
+        }
+    }
+
+    // user removed default tag 
+    async removeUserTags(req, res) {
+        const  tagsToDelete  = req.body
+        const jwtSub = req.auth.payload.sub;
+
+        const foundUser = await this.userModel.findOne({
+            where: {
+                jwtSub: jwtSub
+            }
+        })
+        const userId = foundUser.id 
+        
+        try {
+            const user = await this.userModel.findByPk(userId);
+            await user.removeTags(tagsToDelete);
+            const check = await user.getTags();
+            console.log('check', check);
+            res.status(200).json({message: `tags removed: ${tagsToDelete}`})
+        }catch(error){
+            console.error('error', error);
+            res.status(500).send('Error removing tags');
         }
     }
 }

@@ -20,29 +20,18 @@ class tagRouter {
         router.get('/combined', jwtCheck, this.controller.getCombinedTags.bind(this.controller));
     
         //Basic tag CRUD 
-        router.get(`/`, this.controller.getSystemTags.bind(this.controller));
+        router.get(`/`, jwtCheck, this.controller.getTags.bind(this.controller));
         router.post(`/`, jwtCheck, this.controller.createOne.bind(this.controller));
-        
       
         router.get('/:tagId',this.controller.getOne.bind(this.controller));
         router.put('/:tagId',this.controller.updateOne.bind(this.controller));
         router.delete('/:tagId', jwtCheck, this.controller.deleteOne.bind(this.controller));
         router.get('/:tagId/assocEntryTagsCount', jwtCheck, this.controller.getAssociatedEntryTagsCount.bind(this.controller));
-
-        //send user selected 
         
-        //User-tags association 
-        router.get(`/users/my`, jwtCheck, this.controller.getUserTags.bind(this.controller));
+        //only useful when we have system tags and allow user to add them
         router.post(`/users/my`, jwtCheck, this.controller.addUserTags.bind(this.controller));
         router.delete(`/users/my`, jwtCheck, this.controller.removeUserTags.bind(this.controller));
-        // router.delete('/users/:userId/:tagId',this.controller.removeUserTag.bind(this.controller));
         //  user can 'archive' tags (in future)
-
-        //Entry-tags association
-        router.get('/entries/:entryId', this.controller.getEntryTags.bind(this.controller));
-        router.post('/entries/:entryId', this.controller.addEntryTag.bind(this.controller));    
-        router.delete('/entries/:entryId/:tagId', this.controller.removeEntryTag.bind(this.controller));
-
         return router;
 
 

@@ -1,15 +1,10 @@
 const BaseController = require("./baseController");
-const { sequelize } = require("../db/models/index.js");
-const tagService = require('../services/tagService');
-
-const { Op } = require('sequelize');
 
 class entryController extends BaseController {
     constructor(model, userModel, tagModel){
         super(model); 
         this.userModel = userModel;
         this.tagModel = tagModel; 
-        this.tagService = new tagService(tagModel, model);
         
     }
 
@@ -50,43 +45,30 @@ class entryController extends BaseController {
         });
     }
 
-    async getFiltered(req, res){
-        const jwtSub = req.auth.payload.sub;
-        const foundUser = await this.userModel.findOne({ where: { jwtSub: jwtSub } });
-        const userId = foundUser.id;
-        const { page = 1, limit = 10 } = req.query;
-    
+    async getTagFilter(req, res){
+        const tagIdExists = req.query.tagIds ? true : false;
+        const tagIds = tagIdExists && req.query.tagIds.split(',').map(id => parseInt(id));       
+        
         try {
-            const offset = (page - 1) * limit;
-            const { count, rows } = await this.model.findAndCountAll({
-                where: {
-                    userId: userId,
-                    [Op.or]: [
-                        sequelize.literal(`(
-                            SELECT COUNT(*)
-                            FROM "entry_tags"
-                            WHERE "entry_tags"."entry_id" = "entry"."id"
-                        ) = 0`),
-                        { solution: { [Op.or]: [null, ''] } }
-                    ]
-                },
+            let entries = await this.model.findAll({
                 order: [['created_at', 'DESC']],
-                limit: parseInt(limit),
-                offset: parseInt(offset),
                 include: [{
                     model: this.tagModel,
-                    attributes: ["note", "description", "type", "id"],
-                    through: {attributes: []},
+                    where: { id: tagIds },
+                    attributes: ['note', 'id', 'description'],
+                    through: { attributes: [] },
                 }],
             });
-            const totalPages = Math.ceil(count / limit);
-            res.send({ count, rows, totalPages, page: parseInt(page) });
+            // filter entries - if tags length is equal to tagIds length, then return entry
+            if(tagIds.length === 2) {
+                entries = entries.filter(entry => entry.tags.length === 2);
+            }
+            
+            res.json(entries);
         } catch (error) {
-            console.log('error', error);
-            res.status(500).send('Error getting filtered entries')
+            res.status(500).send('Server Error');
         }
     }
-    
 
     async getOne(req, res){
         try {
@@ -135,6 +117,7 @@ class entryController extends BaseController {
          
             if(tagId) {
                 await newEntry.addTag(tagId);
+                await foundUser.addTag(tagId); // add tag to user_tags table
             }
 
             const entryWithTags = await this.model.findByPk(newEntry.id, {
@@ -180,6 +163,7 @@ class entryController extends BaseController {
                 // Assuming tagId is an array of tag IDs
                 console.log('tag Id?', tagId)
                 await found.setTags(tagId);
+                await user.setTags(tagId);
             }
 
             res.send(found);
@@ -207,32 +191,14 @@ class entryController extends BaseController {
                 return res.status(403).send('Not authorized to delete this entry');
             }
             
-    
             await entry.destroy();
-            res.send("Entry deleted successfully");
+            res.send("Entry deleted successfully"); //tag still available at user tags table
         } catch (error) {
             console.log('error', error);
             res.status(500).send('Error deleting');
         }
     }
 
-    async getGroupedEntries(req, res) {
-        const jwtSub = req.auth.payload.sub;
-        const foundUser = await this.userModel.findOne({
-            where: {
-                jwtSub: jwtSub
-            }
-        })
-        const userId = foundUser.id 
-
-        try {
-        const groupedEntries = await this.tagService.getGroupingTags(userId);
-        res.status(200).json(groupedEntries);
-        } catch(error) {
-            console.error('Error', error);
-            res.status(500).json({ error: 'An error occurred while fetching tags.' });
-        }
-    }
     
       
 }
