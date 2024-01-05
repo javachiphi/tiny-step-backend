@@ -8,23 +8,49 @@ class entryController extends BaseController {
         
     }
 
-
-    async getAllbyOneUser(req, res) {
+    //remove tagfilter method and reroute frontend to entries?tagIds=323
+    async getEntries(req, res) {
         const jwtSub = req.auth.payload.sub;
         const user = await this.userModel.findOne({ where: { jwtSub: jwtSub } });
-
         if (!user) {
             return res.status(404).send('User not found');
         }
-    
-        const { page = 1, limit = 10 } = req.query;
         const userId = user.id;
+    
+        const { tagIds, page = 1, limit = 10 } = req.query;
+        const formattedTagIds = tagIds && tagIds.split(',').map(id => parseInt(id))
         const offset = (page - 1) * limit;
     
         try {
-            const { count, rows } = await this.fetchEntries(userId, limit, offset);
-            const totalPages = Math.ceil(count / limit);
-            res.send({ count, rows, totalPages, page: parseInt(page) });
+            const queryOptions = {
+                where: { userId: userId },
+                order: [['created_at', 'DESC']],
+                limit: parseInt(limit),
+                offset: parseInt(offset),
+                include: [{
+                    model: this.tagModel,
+                    attributes: ["note", "description", "type", "id"],
+                    through: { attributes: [] },
+                    where: tagIds ? { id: formattedTagIds } : undefined,
+                }],
+            }
+            const { count, rows } = await this.model.findAndCountAll(queryOptions);
+            // const entryRow = await rows.filter(entry => entry.tags.length === 2)
+            let totalCount
+            let entryRow 
+            let totalPages
+            if(formattedTagIds && formattedTagIds.length === 2){
+             entryRow = await rows.filter(entry => entry.tags.length === 2) // only two tags, not inclusive of single tag
+             totalCount = entryRow.length
+             totalPages = 'no pagination for two tag id filters';
+            } else {
+                console.log('not going through tag check')
+                entryRow = rows
+                totalPages = Math.ceil(count / limit);
+                totalCount = count
+            }     
+          
+            res.send({ count: totalCount, rows: entryRow, totalPages, currentPage: parseInt(page) });
         } catch (error) {
             console.log('error', error);
             res.status(500).send('Error getting all');

@@ -17,7 +17,7 @@ class EntryRouter {
 
     routes(){
           
-          router.get('/',jwtCheck, this.controller.getAllbyOneUser.bind(this.controller));
+          router.get('/',jwtCheck, this.controller.getEntries.bind(this.controller));
           router.get('/tagFilter',jwtCheck, this.controller.getTagFilter.bind(this.controller));
           router.post('/', jwtCheck, this.controller.createOne.bind(this.controller));
           
